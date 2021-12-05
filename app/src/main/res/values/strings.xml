@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">SmartDrinkingCup</string>
+    <string name="refresh_devices">Refresh</string>
+    <string name="ui_interaction">ui_interaction</string>
+    <string name="hardware_error">hardware_error</string>
+    <string name="bluetooth_debug">bluetooth_debug</string>
+</resources>
