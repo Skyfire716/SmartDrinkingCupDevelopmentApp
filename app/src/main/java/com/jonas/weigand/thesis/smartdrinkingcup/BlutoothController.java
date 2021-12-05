@@ -9,6 +9,12 @@ import android.util.Log;
 
 public class BlutoothController extends BroadcastReceiver {
 
+    private IDeviceDiscovered deviceDiscoverer;
+
+    public BlutoothController(IDeviceDiscovered deviceDiscoverer) {
+        this.deviceDiscoverer = deviceDiscoverer;
+    }
+
     @Override
     public void onReceive(Context context, Intent intent) {
         final String action = intent.getAction();
@@ -31,10 +37,11 @@ public class BlutoothController extends BroadcastReceiver {
             }
         }
         if(action.equals(BluetoothDevice.ACTION_FOUND)){
-            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-            String name = device.getName();
-            String deviceHardwareAddress = device.getAddress();
-            //TODO Add device to Device List
+            deviceDiscoverer.discoveredDevice(intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE));
+        }else if (action.equals(BluetoothAdapter.ACTION_DISCOVERY_STARTED)){
+            deviceDiscoverer.discoveryStarted();
+        }else if (action.equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)){
+            deviceDiscoverer.discoveryFinished();
         }
     }
 }

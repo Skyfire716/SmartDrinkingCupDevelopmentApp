@@ -1,0 +1,16 @@
+<resources>
+    <integer-array name="MultiplierValues">
+        <item>1</item>
+        <item>5</item>
+        <item>100</item>
+        <item>500</item>
+    </integer-array>
+
+    <string-array name="MultiplierNames">
+        <item>"x1"</item>
+        <item>"x5"</item>
+        <item>"x100"</item>
+        <item>"x500"</item>
+    </string-array>
+
+</resources>

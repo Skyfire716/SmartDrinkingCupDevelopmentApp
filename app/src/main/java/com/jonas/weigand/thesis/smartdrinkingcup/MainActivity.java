@@ -3,6 +3,7 @@ package com.jonas.weigand.thesis.smartdrinkingcup;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -10,18 +11,24 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements IDeviceHandler {
 
-    protected Button refreshDevicesBtn;
-    protected CardView devicesViewer;
+    protected AD5932Fragment ad5932Fragment;
 
+    protected ScanDeviceFragment scanDeviceFragment;
     protected BluetoothAdapter bluetoothAdapter;
 
     protected BlutoothController broadcastSink;
+
+    protected BluetoothClientManager bluetoothClientManager;
 
     private static final int REQUEST_BT_ENABLE = 1;
 
@@ -29,26 +36,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        refreshDevicesBtn = findViewById(R.id.refreshDevicesBtn);
-        devicesViewer = findViewById(R.id.deviceViewer);
+        if (savedInstanceState == null) {
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            scanDeviceFragment = new ScanDeviceFragment(this);
+            transaction.replace(R.id.deviceViewer, scanDeviceFragment);
+            transaction.commit();
+        }
 
-        refreshDevicesBtn.setOnClickListener(this);
-        devicesViewer.setOnClickListener(this);
+        getSupportActionBar().hide();
 
-        broadcastSink = new BlutoothController();
+
+        broadcastSink = new BlutoothController(scanDeviceFragment);
         registerReceiver(broadcastSink, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+        registerReceiver(broadcastSink, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED));
+        registerReceiver(broadcastSink, new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED));
         registerReceiver(broadcastSink, new IntentFilter(BluetoothDevice.ACTION_FOUND));
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if(bluetoothAdapter == null){
-            Log.e(String.valueOf(R.string.hardware_error), "Device has no BluetoothAdapter");
+            Log.e(getResources().getString(R.string.hardware_error), "Device has no BluetoothAdapter");
         }else{
             if(!bluetoothAdapter.isEnabled()){
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableBtIntent, REQUEST_BT_ENABLE);
             }
         }
-        bluetoothAdapter.startDiscovery();
+        new Handler(Looper.myLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                bluetoothAdapter.startDiscovery();
+            }
+        }, 1500);
     }
 
     @Override
@@ -56,24 +74,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == REQUEST_BT_ENABLE){
             if(resultCode == RESULT_OK) {
-                Log.d(String.valueOf(R.string.bluetooth_debug), "Bluetooth garanted");
+                Log.d(getResources().getString(R.string.bluetooth_debug), "Bluetooth garanted");
             }else{
-                Log.d(String.valueOf(R.string.bluetooth_debug), "Bluetooth request results in: " + resultCode);
+                Log.d(getResources().getString(R.string.bluetooth_debug), "Bluetooth request results in: " + resultCode);
             }
-        }
-    }
-
-    @Override
-    public void onClick(View v) {
-        if (v == refreshDevicesBtn){
-            Log.d(String.valueOf(R.string.ui_interaction), "RefreshBtn Clicked");
-            bluetoothAdapter.startDiscovery();
-            //TODO Clear List of Devices
-        }else if(v == devicesViewer) {
-            Log.d(String.valueOf(R.string.ui_interaction), "CardView Item Clicked");
-            //TODO Device Viewer zu RecyclerViewer machen
-        }else{
-            Log.d(String.valueOf(R.string.ui_interaction), "Unknown View clicked: " + v);
         }
     }
 
@@ -81,5 +85,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(broadcastSink);
+    }
+
+    @Override
+    public void connectToDevice(BluetoothDevice device) {
+        Log.d(getResources().getString(R.string.bluetooth_debug), "Connecting to BluetoothDevice");
+        bluetoothAdapter.cancelDiscovery();
+        bluetoothClientManager = new BluetoothClientManager(device);
+        bluetoothClientManager.start();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        ad5932Fragment = new AD5932Fragment();
+        transaction.replace(R.id.deviceViewer, ad5932Fragment);
+        transaction.commit();
     }
 }

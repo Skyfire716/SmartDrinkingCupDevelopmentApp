@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SmartDrinkingCup</string>
+    <string name="refresh_devices">Suche Geräte</string>
+    <string name="ui_interaction">ui_interaction</string>
+    <string name="hardware_error">hardware_error</string>
+    <string name="bluetooth_debug">bluetooth_debug</string>
+    <string name="scanner_scanning">Suche....</string>
+    <string name="scanner_done">Gefundene Geräte:</string>
+    <string name="no_name_device">Gerät ohne Name</string>
+</resources>
