@@ -61,12 +61,7 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler {
                 startActivityForResult(enableBtIntent, REQUEST_BT_ENABLE);
             }
         }
-        new Handler(Looper.myLooper()).postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                bluetoothAdapter.startDiscovery();
-            }
-        }, 1500);
+        scanDevice(750);
     }
 
     @Override
@@ -97,5 +92,15 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler {
         ad5932Fragment = new AD5932Fragment();
         transaction.replace(R.id.deviceViewer, ad5932Fragment);
         transaction.commit();
+    }
+
+    @Override
+    public void scanDevice(int delay) {
+        new Handler(Looper.myLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                bluetoothAdapter.startDiscovery();
+            }
+        }, delay);
     }
 }

@@ -8,4 +8,6 @@
     <string name="scanner_scanning">Suche....</string>
     <string name="scanner_done">Gefundene Geräte:</string>
     <string name="no_name_device">Gerät ohne Name</string>
+    <string name="settings">Einstellungen</string>
+    <string name="frequency_sign">Hz</string>
 </resources>

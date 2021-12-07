@@ -76,6 +76,7 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener {
         super.onViewCreated(view, savedInstanceState);
         fragmentContainerView = (FragmentContainerView)  getView().findViewById(R.id.ad5932settings);
         collapseSettings = (Button) getView().findViewById(R.id.collapseSettings);
+        collapseSettings.setOnClickListener(this);
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
         ad5932SettingsFragment = new AD5932SettingsFragment();
         transaction.replace(R.id.ad5932settings, ad5932SettingsFragment);
@@ -85,10 +86,12 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         if(v == collapseSettings){
-            if (fragmentContainerView.getVisibility() == View.VISIBLE){
-                fragmentContainerView.setVisibility(View.INVISIBLE);
+            if (ad5932SettingsFragment.getView().getVisibility() == View.VISIBLE){
+                ad5932SettingsFragment.getView().setVisibility(View.INVISIBLE);
+                collapseSettings.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_baseline_keyboard_arrow_right_24, 0, 0, 0);
             }else {
-                fragmentContainerView.setVisibility(View.VISIBLE);
+                ad5932SettingsFragment.getView().setVisibility(View.VISIBLE);
+                collapseSettings.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_baseline_keyboard_arrow_down_24, 0, 0, 0);
             }
         }
     }
