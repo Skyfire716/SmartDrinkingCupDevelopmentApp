@@ -1,5 +1,7 @@
 package com.jonas.weigand.thesis.smartdrinkingcup;
 
+import android.util.Log;
+
 import java.util.UUID;
 
 public class ApplicationUUIDS {
@@ -17,4 +19,17 @@ public class ApplicationUUIDS {
     public static final UUID UUID_SYNCOUT =UUID.fromString("6a2676fa-20e0-48a7-9cd6-560a48013bfe");
     public static final UUID UUID_POWERSAVING =UUID.fromString("9988258d-5663-4e1f-a4bc-a8e211f98e39");
     public static final UUID UUID_TRIGGER =UUID.fromString("cfe2a28b-3e8a-4023-b2b9-70c773a27fb5");
+
+    public static String lookup(String uuid, String unknownServiceString) {
+        Log.d("ApplicationUUIDS", "uuid " + uuid + " ServiceString " + unknownServiceString);
+        if (uuid == UUID_CONFIGURATION.toString()){
+            if (unknownServiceString == "UnknownCharacteristic"){
+
+            }else if (unknownServiceString == "Unknown_Service"){
+
+            }
+            return "Control";
+        }
+        return "";
+    }
 }

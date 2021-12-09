@@ -1,5 +1,6 @@
 package com.jonas.weigand.thesis.smartdrinkingcup;
 
+import android.bluetooth.BluetoothGattCallback;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -8,6 +9,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +25,8 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener {
     protected Button collapseSettings;
     protected AD5932SettingsFragment ad5932SettingsFragment;
     protected FragmentContainerView fragmentContainerView;
+
+    private IAD5932ConfigChanged IAD5932ConfigChanged;
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -81,6 +85,7 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener {
         ad5932SettingsFragment = new AD5932SettingsFragment();
         transaction.replace(R.id.ad5932settings, ad5932SettingsFragment);
         transaction.commit();
+        ad5932SettingsFragment.setIAD5932ConfigChanged(IAD5932ConfigChanged);
      }
 
     @Override
@@ -95,4 +100,17 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener {
             }
         }
     }
+
+    public void setAD5932ConfigChanged(IAD5932ConfigChanged configChanged) {
+        this.IAD5932ConfigChanged = configChanged;
+    }
+
+    /*
+    @Override
+    public void changeConfig(AD5932Config conf) {
+        if (this.bluetoothClientManager != null && conf != null){
+            bluetoothClientManager.write(conf.packConfigForTransfer());
+        }
+    }
+    */
 }

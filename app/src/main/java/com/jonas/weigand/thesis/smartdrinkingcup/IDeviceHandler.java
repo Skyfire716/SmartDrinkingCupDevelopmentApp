@@ -4,6 +4,8 @@ import android.bluetooth.BluetoothDevice;
 
 public interface IDeviceHandler {
 
-    public void connectToDevice(BluetoothDevice device);
-    public void scanDevice(int delay);
+    void connectToDevice(BluetoothDevice device);
+    void connectedToDevice();
+    void disconnectedToDevice();
+    void scanDevice(int delay);
 }

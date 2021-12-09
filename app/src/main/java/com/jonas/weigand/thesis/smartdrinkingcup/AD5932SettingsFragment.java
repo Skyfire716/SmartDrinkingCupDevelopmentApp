@@ -32,6 +32,8 @@ public class AD5932SettingsFragment extends Fragment implements View.OnClickList
     protected Switch syncout_sw;
     protected Switch inc_by_sw;
 
+    protected IAD5932ConfigChanged configChanged;
+
     private int start_frequency_multiplier;
     private int delta_frequency_multiplier;
 
@@ -340,6 +342,11 @@ public class AD5932SettingsFragment extends Fragment implements View.OnClickList
             //ad5932Config.printRegister(ad5932Config.getIncrementIntervalReg());
             //ad5932Config.printRegister(ad5932Config.getLowerStartFrequency());
             //ad5932Config.printRegister(ad5932Config.getUpperStartFrequency());
+            if (configChanged != null){
+                configChanged.changeConfig(ad5932Config);
+            }else {
+                Log.d("ConfigChanged ", "is null");
+            }
         }
     }
 
@@ -411,5 +418,9 @@ public class AD5932SettingsFragment extends Fragment implements View.OnClickList
             return;
         }
         apply_btn.setClickable(true);
+    }
+
+    public void setIAD5932ConfigChanged(IAD5932ConfigChanged iad5932ConfigChanged) {
+        configChanged = iad5932ConfigChanged;
     }
 }

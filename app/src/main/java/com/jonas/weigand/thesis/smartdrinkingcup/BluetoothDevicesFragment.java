@@ -12,6 +12,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * A fragment representing a list of Items.
@@ -69,14 +72,14 @@ public class BluetoothDevicesFragment extends Fragment {
             } else {
                 recyclerView.setLayoutManager(new GridLayoutManager(context, mColumnCount));
             }
-            recyclerView.setAdapter(new BluetoothDevicesRecyclerViewAdapter(BluetoothDeviceContent.items, handler));
+            recyclerView.setAdapter(new BluetoothDevicesRecyclerViewAdapter(new ArrayList<BluetoothDeviceItem>(BluetoothDeviceContent.items), handler));
         }
         return view;
     }
 
     public void updateDevies(){
         if (recyclerView != null){
-            recyclerView.setAdapter(new BluetoothDevicesRecyclerViewAdapter(BluetoothDeviceContent.items, handler));
+            recyclerView.setAdapter(new BluetoothDevicesRecyclerViewAdapter(new ArrayList<BluetoothDeviceItem>(BluetoothDeviceContent.items), handler));
         }
     }
 }

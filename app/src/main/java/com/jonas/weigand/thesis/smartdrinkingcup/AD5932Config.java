@@ -25,8 +25,8 @@ public class AD5932Config {
     private final short LOWER_DELTA_FREQUENCY_MASK = 0x2000;
     private final short UPPER_DELTA_FREQUENCY_MASK = 0x3000;
     private final short INCREMENT_INVERAL_MASK = 0x4000;
-    private final short LOWER_START_FREQUENCY_MASK = 0x0C00;
-    private final short UPPER_START_FREQUENCY_MASK = 0x0D00;
+    private final short LOWER_START_FREQUENCY_MASK = (short) 0xC000;
+    private final short UPPER_START_FREQUENCY_MASK = (short) 0xD000;
 
     public byte[] getControl() {
         byte[] control = new byte[2];
@@ -109,9 +109,9 @@ public class AD5932Config {
 
     public byte[] getLowerStartFrequency(){
         byte[] lowerStart = new byte[2];
-        short value = LOWER_DELTA_FREQUENCY_MASK;
+        short value = LOWER_START_FREQUENCY_MASK;
         value |= (0x0FFF & start_frequency);
-        if ((value & LOWER_DELTA_FREQUENCY_MASK) != LOWER_DELTA_FREQUENCY_MASK) {
+        if ((value & LOWER_START_FREQUENCY_MASK) != LOWER_START_FREQUENCY_MASK) {
             Log.e("MASK NOT MATCHING", "");
         }
         lowerStart[0] = (byte) (value & 0xFF);
@@ -121,9 +121,9 @@ public class AD5932Config {
 
     public byte[] getUpperStartFrequency(){
         byte[] upperStart = new byte[2];
-        short value = UPPER_DELTA_FREQUENCY_MASK;
+        short value = UPPER_START_FREQUENCY_MASK;
         value |= ((0x0FFF000 & start_frequency) >> 12);
-        if ((value & UPPER_DELTA_FREQUENCY_MASK) != UPPER_DELTA_FREQUENCY_MASK) {
+        if ((value & UPPER_START_FREQUENCY_MASK) != UPPER_START_FREQUENCY_MASK) {
             Log.e("MASK NOT MATCHING", "");
         }
         upperStart[0] = (byte) (value & 0xFF);
@@ -155,6 +155,89 @@ public class AD5932Config {
         transferData[12] = upper_startReg[0];
         transferData[13] = upper_startReg[1];
         return transferData;
+    }
+
+    public boolean loadConfigFromTransfer(byte[] data){
+        if (data.length != 14){
+            Log.d("Error", "Received Data not the right length");
+            return false;
+        }
+        byte[] controlReg = new byte[2];
+        byte[] number_of_incReg = new byte[2];
+        byte[] lower_deltaReg = new byte[2];
+        byte[] upper_deltaReg = new byte[2];
+        byte[] inc_intReg = new byte[2];
+        byte[] lower_startReg = new byte[2];
+        byte[] upper_startReg = new byte[2];
+        controlReg[0] = data[0];
+        controlReg[1] = data[1];
+        Log.d("AD5932Settings", data.toString());
+        short controlVal = (short) (((((short)controlReg[1]) << 8) & 0xFF00) | (((short)controlReg[0]) & 0xFF));
+        if ((controlVal & CONTROL_MASK) != CONTROL_MASK){
+            Log.e("Mask Fail", "Control");
+            return false;
+        }
+        number_of_incReg[0] = data[2];
+        number_of_incReg[1] = data[3];
+        short number_of_incVal = (short) (((((short)number_of_incReg[1]) << 8) & 0xFF00) | (((short)number_of_incReg[0]) & 0xFF));
+        if ((number_of_incVal & NUMBER_INC_MASK) != NUMBER_INC_MASK){
+            Log.e("Mask Fail", "NumberOfInc");
+            return false;
+        }
+        lower_deltaReg[0] = data[4];
+        lower_deltaReg[1] = data[5];
+        short lower_deltaVal = (short) (((((short)lower_deltaReg[1]) << 8) & 0xFF00) | (((short)lower_deltaReg[0]) & 0xFF));
+        if ((lower_deltaVal & LOWER_DELTA_FREQUENCY_MASK) != LOWER_DELTA_FREQUENCY_MASK){
+            Log.e("Mask Fail", "LowerDelta");
+            return false;
+        }
+        upper_deltaReg[0] = data[6];
+        upper_deltaReg[1] = data[7];
+        short upper_deltalVal = (short) (((((short)upper_deltaReg[1]) << 8) & 0xFF00) | (((short)upper_deltaReg[0]) & 0xFF));
+        if ((upper_deltalVal & UPPER_DELTA_FREQUENCY_MASK) != UPPER_DELTA_FREQUENCY_MASK){
+            Log.e("Mask Fail", "UpperDelta");
+            return false;
+        }
+        inc_intReg[0] = data[8];
+        inc_intReg[1] = data[9];
+        short inc_intVal = (short) (((((short)inc_intReg[1]) << 8) & 0xFF00) | (((short)inc_intReg[0]) & 0xFF));
+        if ((inc_intVal & INCREMENT_INVERAL_MASK) != INCREMENT_INVERAL_MASK){
+            Log.e("Mask Fail", "IncInt");
+            return false;
+        }
+        lower_startReg[0] = data[10];
+        lower_startReg[1] = data[11];
+        short lower_startVal = (short) (((((short)lower_startReg[1]) << 8) & 0xFF00) | (((short)lower_startReg[0]) & 0xFF));
+        if ((lower_startVal & LOWER_START_FREQUENCY_MASK) != LOWER_START_FREQUENCY_MASK){
+            Log.e("Mask Fail", "LowerStart");
+            Log.e("Mask", Integer.toBinaryString(lower_startVal));
+            return false;
+        }
+        Log.e("Mask", Integer.toBinaryString(lower_startVal));
+        upper_startReg[0] = data[12];
+        upper_startReg[1] = data[13];
+        short upper_startVal = (short) (((((short)upper_startReg[1]) << 8) & 0xFF00) | (((short)upper_startReg[0]) & 0xFF));
+        if ((upper_startVal & UPPER_START_FREQUENCY_MASK) != UPPER_START_FREQUENCY_MASK){
+            Log.e("Mask Fail", "UpperStart");
+            return false;
+        }
+        //D15   D14   D13  D12  D11  D10  D9  D8  D7  D6 D5 D4 D3 D2 D1 D0
+        //32768 16384 8192 4096 2048 1024 512 256 128 64 32 16 8  4  2  1
+        this.number_of_increments = (((int) number_of_incVal) & 0xFFF);
+        this.increment_interval = ((int) (inc_intVal & 0x07FF));
+        this.multiplier = (byte) ((inc_intVal & 0x1800) >> 11);
+        this.delta_frequency = (((((int)upper_deltalVal) & 0x7FF) << 12) | (((int) lower_deltaVal) & 0xFFF));
+        this.delta_frequency *= ((upper_deltalVal & 0x0800) == 0x0800) ? -1 : 1;
+        this.start_frequency = ((((int)upper_startVal) & 0xFFF) << 12) | (((int) lower_startVal) & 0xFFF);
+        this.inc_on_cycles = ((inc_intVal & 0x2000) == 0x2000);
+        this.sync_out = ((controlVal & 0x0004) == 0x0004);
+        this.sync_sel = ((controlVal & 0x0008) == 0x0008);
+        this.int_inc = ((controlVal & 0x0020) == 0x0020);
+        this.msbout = ((controlVal & 0x0100) == 0x0100);
+        this.sine = ((controlVal & 0x0200) == 0x0200);
+        this.dac_enable = ((controlVal & 0x0400) == 0x0400);
+        this.b24 = ((controlVal & 0x0800) == 0x0800);
+        return true;
     }
 
     public void printRegister(byte[] register){

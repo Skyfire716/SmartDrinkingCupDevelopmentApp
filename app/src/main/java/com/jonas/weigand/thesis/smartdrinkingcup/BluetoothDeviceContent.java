@@ -4,11 +4,12 @@ import android.bluetooth.BluetoothDevice;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 public class BluetoothDeviceContent {
 
-    public static ArrayList<BluetoothDeviceItem> items = new ArrayList<>();
+    public static HashSet<BluetoothDeviceItem> items = new HashSet<>();
 
     public static Map<BluetoothDevice, BluetoothDeviceItem> itemMap = new HashMap<>();
 

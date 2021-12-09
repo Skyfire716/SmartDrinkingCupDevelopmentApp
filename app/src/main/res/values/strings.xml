@@ -130,4 +130,6 @@
     <string name="ad5932_b24">B24</string>
     <string name="ad5932_increment_interval">Increment Interval</string>
     <string name="ad5932_increment_by">Cycles/MCLK</string>
+    <string name="unknown_service">Unknown_Service</string>
+    <string name="unknown_characteristic">UnknownCharacteristic</string>
 </resources>

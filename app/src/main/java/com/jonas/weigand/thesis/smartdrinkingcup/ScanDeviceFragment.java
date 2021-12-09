@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -132,4 +133,5 @@ public class ScanDeviceFragment extends Fragment implements View.OnClickListener
             scanProgressSpinner.setVisibility(View.INVISIBLE);
         }
     }
+
 }
