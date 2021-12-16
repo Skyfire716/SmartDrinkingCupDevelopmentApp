@@ -1,6 +1,5 @@
 package com.jonas.weigand.thesis.smartdrinkingcup;
 
-import android.bluetooth.BluetoothGattCallback;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -9,11 +8,11 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.fragment.app.FragmentTransaction;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -22,6 +21,9 @@ import android.widget.Button;
  */
 public class AD5932Fragment extends Fragment implements View.OnClickListener {
 
+    private String deviceName;
+    protected TextView deviceNameTextView;
+    protected Button backBtn;
     protected Button collapseSettings;
     protected AD5932SettingsFragment ad5932SettingsFragment;
     protected FragmentContainerView fragmentContainerView;
@@ -80,6 +82,9 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener {
         super.onViewCreated(view, savedInstanceState);
         fragmentContainerView = (FragmentContainerView)  getView().findViewById(R.id.ad5932settings);
         collapseSettings = (Button) getView().findViewById(R.id.collapseSettings);
+        backBtn = (Button) getView().findViewById(R.id.returnButton);
+        deviceNameTextView = (TextView) getView().findViewById(R.id.deviceNameTextView);
+        deviceNameTextView.setText(deviceName);
         collapseSettings.setOnClickListener(this);
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
         ad5932SettingsFragment = new AD5932SettingsFragment();
@@ -90,6 +95,9 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener {
 
     @Override
     public void onClick(View v) {
+        if (v== backBtn){
+            IAD5932ConfigChanged.returnToScanDevice();
+        }
         if(v == collapseSettings){
             if (ad5932SettingsFragment.getView().getVisibility() == View.VISIBLE){
                 ad5932SettingsFragment.getView().setVisibility(View.INVISIBLE);
@@ -103,6 +111,14 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener {
 
     public void setAD5932ConfigChanged(IAD5932ConfigChanged configChanged) {
         this.IAD5932ConfigChanged = configChanged;
+    }
+
+    public void setDeviceText(String deviceName) {
+        this.deviceName = deviceName;
+    }
+
+    public void setConfig(AD5932Config ad5932Config) {
+        ad5932SettingsFragment.setAD5932Config(ad5932Config);
     }
 
     /*

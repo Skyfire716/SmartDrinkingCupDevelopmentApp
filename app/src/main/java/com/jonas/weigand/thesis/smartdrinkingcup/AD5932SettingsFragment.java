@@ -423,4 +423,33 @@ public class AD5932SettingsFragment extends Fragment implements View.OnClickList
     public void setIAD5932ConfigChanged(IAD5932ConfigChanged iad5932ConfigChanged) {
         configChanged = iad5932ConfigChanged;
     }
+
+    private void restoreUi(){
+        b24_sw.setChecked(ad5932Config.isB24());
+        dac_enable_sw.setChecked(ad5932Config.isDac_enable());
+        sine_sw.setChecked(ad5932Config.isSine());
+        msbout_sw.setChecked(ad5932Config.isMsbout());
+        intinc_sw.setChecked(ad5932Config.isInt_inc());
+        sync_sel_sw.setChecked(ad5932Config.isSync_sel());
+        syncout_sw.setChecked(ad5932Config.isSync_out());
+        inc_by_sw.setChecked(ad5932Config.isInc_on_cycles());
+
+        multiplier_spinner.setSelection(ad5932Config.getMultiplier());
+
+        start_frequency_edit_text.setText(ad5932Config.getStart_frequency());
+        delta_frequency_edit_text.setText(ad5932Config.getDelta_frequency());
+        number_inc_edit_text.setText(ad5932Config.getNumber_of_increments());
+        inc_interval_edit_text.setText(ad5932Config.getIncrement_interval());
+    }
+
+    public void setAD5932Config(AD5932Config ad5932Config) {
+        this.ad5932Config = ad5932Config;
+        //TODO Ui not restored
+        new Handler(Looper.myLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                restoreUi();
+            }
+        }, 250);
+    }
 }

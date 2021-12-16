@@ -213,7 +213,7 @@ public class AD5932Config {
             Log.e("Mask", Integer.toBinaryString(lower_startVal));
             return false;
         }
-        Log.e("Mask", Integer.toBinaryString(lower_startVal));
+        Log.e("Mask", Integer.toBinaryString((lower_startVal & 0xFFFFFFFF)));
         upper_startReg[0] = data[12];
         upper_startReg[1] = data[13];
         short upper_startVal = (short) (((((short)upper_startReg[1]) << 8) & 0xFF00) | (((short)upper_startReg[0]) & 0xFF));
@@ -228,7 +228,7 @@ public class AD5932Config {
         this.multiplier = (byte) ((inc_intVal & 0x1800) >> 11);
         this.delta_frequency = (((((int)upper_deltalVal) & 0x7FF) << 12) | (((int) lower_deltaVal) & 0xFFF));
         this.delta_frequency *= ((upper_deltalVal & 0x0800) == 0x0800) ? -1 : 1;
-        this.start_frequency = ((((int)upper_startVal) & 0xFFF) << 12) | (((int) lower_startVal) & 0xFFF);
+        this.start_frequency = (((((int)upper_startVal) & 0xFFF) << 12) | (((int) lower_startVal) & 0xFFF)) & 0xFFFFFF;
         this.inc_on_cycles = ((inc_intVal & 0x2000) == 0x2000);
         this.sync_out = ((controlVal & 0x0004) == 0x0004);
         this.sync_sel = ((controlVal & 0x0008) == 0x0008);
