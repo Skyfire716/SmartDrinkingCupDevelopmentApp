@@ -5,11 +5,12 @@
       <map>
         <entry key="../../../layout/custom_preview.xml" value="0.203125" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.22" />
-        <entry key="app/src/main/res/layout/fragment_a_d5932.xml" value="0.22474747474747475" />
+        <entry key="app/src/main/res/layout/fragment_a_d5932.xml" value="0.18" />
         <entry key="app/src/main/res/layout/fragment_a_d5932_settings.xml" value="0.14" />
         <entry key="app/src/main/res/layout/fragment_item.xml" value="0.18" />
         <entry key="app/src/main/res/layout/fragment_item_list.xml" value="0.22" />
         <entry key="app/src/main/res/layout/fragment_scan_device.xml" value="0.25" />
+        <entry key="app/src/main/res/layout/sample_cup_viewer.xml" value="0.1671195652173913" />
         <entry key="app/src/main/res/layout/sample_graph_view.xml" value="0.13858695652173914" />
         <entry key="app/src/main/res/layout/value_picker.xml" value="0.33" />
         <entry key="app/src/main/res/xml/root_preferences.xml" value="0.13" />

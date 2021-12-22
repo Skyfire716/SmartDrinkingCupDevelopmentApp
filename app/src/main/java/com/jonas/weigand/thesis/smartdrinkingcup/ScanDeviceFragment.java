@@ -113,9 +113,11 @@ public class ScanDeviceFragment extends Fragment implements View.OnClickListener
 
     @Override
     public void discoveredDevice(BluetoothDevice device) {
-        Log.d(getResources().getString(R.string.bluetooth_debug), "Discovered Device " + device.getName());
-        BluetoothDeviceContent.addItem(new BluetoothDeviceItem(device, device.getName() == null ? getResources().getString(R.string.no_name_device) : device.getName(), device.getAddress()));
-        devicesViewer.updateDevies();
+        if (device != null) {
+            Log.d(getResources().getString(R.string.bluetooth_debug), "Discovered Device " + device.getName());
+            BluetoothDeviceContent.addItem(new BluetoothDeviceItem(device, device.getName() == null ? getResources().getString(R.string.no_name_device) : device.getName(), device.getAddress()));
+            devicesViewer.updateDevies();
+        }
     }
 
     @Override

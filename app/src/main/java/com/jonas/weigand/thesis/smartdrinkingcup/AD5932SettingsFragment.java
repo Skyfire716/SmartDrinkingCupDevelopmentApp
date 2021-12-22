@@ -436,20 +436,19 @@ public class AD5932SettingsFragment extends Fragment implements View.OnClickList
 
         multiplier_spinner.setSelection(ad5932Config.getMultiplier());
 
-        start_frequency_edit_text.setText(ad5932Config.getStart_frequency());
-        delta_frequency_edit_text.setText(ad5932Config.getDelta_frequency());
-        number_inc_edit_text.setText(ad5932Config.getNumber_of_increments());
-        inc_interval_edit_text.setText(ad5932Config.getIncrement_interval());
+        start_frequency_edit_text.setText("" + ad5932Config.getStart_frequency());
+        delta_frequency_edit_text.setText("" + ad5932Config.getDelta_frequency());
+        number_inc_edit_text.setText("" + ad5932Config.getNumber_of_increments());
+        inc_interval_edit_text.setText("" + ad5932Config.getIncrement_interval());
     }
 
     public void setAD5932Config(AD5932Config ad5932Config) {
         this.ad5932Config = ad5932Config;
-        //TODO Ui not restored
-        new Handler(Looper.myLooper()).postDelayed(new Runnable() {
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
                 restoreUi();
             }
-        }, 250);
+        }, 150);
     }
 }

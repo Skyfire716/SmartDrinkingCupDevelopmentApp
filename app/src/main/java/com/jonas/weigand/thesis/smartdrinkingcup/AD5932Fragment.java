@@ -4,6 +4,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.fragment.app.FragmentTransaction;
@@ -11,22 +12,39 @@ import androidx.fragment.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.Transformation;
 import android.widget.Button;
 import android.widget.TextView;
+
+import java.text.DecimalFormat;
 
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link AD5932Fragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class AD5932Fragment extends Fragment implements View.OnClickListener {
+public class AD5932Fragment extends Fragment implements View.OnClickListener, IIMUUpdate {
 
     private String deviceName;
     protected TextView deviceNameTextView;
+
+    private DecimalFormat df = new DecimalFormat("0.00");
+
+    protected TextView ax;
+    protected TextView ay;
+    protected TextView az;
+    protected TextView gx;
+    protected TextView gy;
+    protected TextView gz;
+
+    protected boolean settings_visible = true;
+
     protected Button backBtn;
     protected Button collapseSettings;
     protected AD5932SettingsFragment ad5932SettingsFragment;
     protected FragmentContainerView fragmentContainerView;
+    protected FragmentContainerView cupRendererContainer;
 
     private IAD5932ConfigChanged IAD5932ConfigChanged;
 
@@ -81,15 +99,28 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         fragmentContainerView = (FragmentContainerView)  getView().findViewById(R.id.ad5932settings);
+        cupRendererContainer = (FragmentContainerView) getView().findViewById(R.id.cupRendererContainer);
         collapseSettings = (Button) getView().findViewById(R.id.collapseSettings);
         backBtn = (Button) getView().findViewById(R.id.returnButton);
+        backBtn.setOnClickListener(this);
         deviceNameTextView = (TextView) getView().findViewById(R.id.deviceNameTextView);
         deviceNameTextView.setText(deviceName);
         collapseSettings.setOnClickListener(this);
+        ax = (TextView) getView().findViewById(R.id.ax);
+        ay = (TextView) getView().findViewById(R.id.ay);
+        az = (TextView) getView().findViewById(R.id.az);
+        gx = (TextView) getView().findViewById(R.id.gx);
+        gy = (TextView) getView().findViewById(R.id.gy);
+        gz = (TextView) getView().findViewById(R.id.gz);
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
         ad5932SettingsFragment = new AD5932SettingsFragment();
         transaction.replace(R.id.ad5932settings, ad5932SettingsFragment);
         transaction.commit();
+        FragmentTransaction transaction1 = getChildFragmentManager().beginTransaction();
+        CupFragment cupFragment = new CupFragment();
+        transaction1.replace(R.id.cupRendererContainer, cupFragment);
+        transaction1.addToBackStack(null);
+        transaction1.commit();
         ad5932SettingsFragment.setIAD5932ConfigChanged(IAD5932ConfigChanged);
      }
 
@@ -99,14 +130,72 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener {
             IAD5932ConfigChanged.returnToScanDevice();
         }
         if(v == collapseSettings){
-            if (ad5932SettingsFragment.getView().getVisibility() == View.VISIBLE){
-                ad5932SettingsFragment.getView().setVisibility(View.INVISIBLE);
+            if (settings_visible){
+                collapseView(ad5932SettingsFragment.getView());
                 collapseSettings.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_baseline_keyboard_arrow_right_24, 0, 0, 0);
             }else {
-                ad5932SettingsFragment.getView().setVisibility(View.VISIBLE);
+                expand(ad5932SettingsFragment.getView());
                 collapseSettings.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_baseline_keyboard_arrow_down_24, 0, 0, 0);
             }
+            settings_visible = !settings_visible;
         }
+    }
+
+    //https://stackoverflow.com/a/13381228
+
+    private void expand(final View v) {
+        int matchParentMeasureSpec = View.MeasureSpec.makeMeasureSpec(((View) v.getParent()).getWidth(), View.MeasureSpec.EXACTLY);
+        int wrapContentMeasureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        v.measure(matchParentMeasureSpec, wrapContentMeasureSpec);
+        final int targetHeight = v.getMeasuredHeight();
+
+        // Older versions of android (pre API 21) cancel animations for views with a height of 0.
+        v.getLayoutParams().height = 1;
+        v.setVisibility(View.VISIBLE);
+        Animation a = new Animation()
+        {
+            @Override
+            protected void applyTransformation(float interpolatedTime, Transformation t) {
+                v.getLayoutParams().height = interpolatedTime == 1
+                        ? ConstraintLayout.LayoutParams.WRAP_CONTENT
+                        : (int)(targetHeight * interpolatedTime);
+                v.requestLayout();
+            }
+
+            @Override
+            public boolean willChangeBounds() {
+                return true;
+            }
+        };
+
+        // Expansion speed of 1dp/ms
+        a.setDuration((int)(targetHeight / v.getContext().getResources().getDisplayMetrics().density));
+        v.startAnimation(a);
+    }
+
+    private void collapseView(final View v){
+        final int initialHeight = v.getMeasuredHeight();
+        Animation a = new Animation()
+        {
+            @Override
+            protected void applyTransformation(float interpolatedTime, Transformation t) {
+                if(interpolatedTime == 1){
+                    v.setVisibility(View.GONE);
+                }else{
+                    v.getLayoutParams().height = initialHeight - (int)(initialHeight * interpolatedTime);
+                    v.requestLayout();
+                }
+            }
+
+            @Override
+            public boolean willChangeBounds() {
+                return true;
+            }
+        };
+
+        // Collapse speed of 1dp/ms
+        a.setDuration((int)(initialHeight / v.getContext().getResources().getDisplayMetrics().density));
+        v.startAnimation(a);
     }
 
     public void setAD5932ConfigChanged(IAD5932ConfigChanged configChanged) {
@@ -119,6 +208,32 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener {
 
     public void setConfig(AD5932Config ad5932Config) {
         ad5932SettingsFragment.setAD5932Config(ad5932Config);
+    }
+
+    @Override
+    public void IMUAccelUpdate(float ax, float ay, float az) {
+        if (this.ax != null){
+            this.ax.setText("" + df.format(ax));
+        }
+        if (this.ay != null){
+            this.ay.setText("" + df.format(ay));
+        }
+        if (this.az != null){
+            this.az.setText("" + df.format(az));
+        }
+    }
+
+    @Override
+    public void IMUGyroUpdate(float gx, float gy, float gz) {
+        if (this.gx != null){
+            this.gx.setText("" + df.format(gx));
+        }
+        if (this.gy != null){
+            this.gy.setText("" + df.format(gy));
+        }
+        if (this.gz != null){
+            this.gz.setText("" + df.format(gz));
+        }
     }
 
     /*

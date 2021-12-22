@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
@@ -22,7 +23,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements IDeviceHandler, IDeviceDiscovered, IAD5932ConfigChanged {
 
@@ -36,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
     protected BluetoothGatt ad5932Gatt;
     protected BluetoothGattService ad5932configService;
 
+    protected IIMUUpdate imuupdate;
 
     private ScanCallback leScanCallback = new ScanCallback() {
         @Override
@@ -101,13 +108,59 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
                 Log.d("Can Load From Data?", "" + ad5932Config.loadConfigFromTransfer(characteristic.getValue()));
                 Log.d("AD5932Config", ad5932Config.toString());
                 ad5932Fragment.setConfig(ad5932Config);
+            }else if(characteristic.getValue() != null && characteristic.getUuid().equals(ApplicationUUIDS.UUID_IMU_ACCEL)){
+                Log.d("LOLOLOL", "" + characteristic.getValue());
+                Log.d("LOLOLOL", "" + characteristic.getValue().length);
             }
+        }
+
+        @Override
+        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            super.onDescriptorWrite(gatt, descriptor, status);
+            printGattStatus(status);
+            Log.d("Descriptor", "Wrote Destctiptor? " + status);
         }
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicChanged(gatt, characteristic);
-            Log.d("Characteristic", "Changed");
+            //Log.d("Characteristic", "Changed");
+            if (characteristic.getUuid().equals(ApplicationUUIDS.UUID_IMU_ACCEL)){
+                byte[] imu_data = characteristic.getValue();
+                if (imuupdate != null && imu_data != null){
+                    byte[] aXbytes = new byte[]{imu_data[0], imu_data[1], imu_data[2], imu_data[3]};
+                    byte[] aYbytes = new byte[]{imu_data[4], imu_data[5], imu_data[6], imu_data[7]};
+                    byte[] aZbytes = new byte[]{imu_data[8], imu_data[9], imu_data[10], imu_data[11]};
+                    float aX = ByteBuffer.wrap(aXbytes).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+                    float aY = ByteBuffer.wrap(aYbytes).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+                    float aZ = ByteBuffer.wrap(aZbytes).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+                    //Log.d("Acceleration", aX + ", " + aY + ", " + aZ);
+
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            imuupdate.IMUAccelUpdate(aX, aY, aZ);
+                        }
+                    });
+                }
+            }else if (characteristic.getUuid().equals(ApplicationUUIDS.UUID_IMU_GYRO)){
+                byte[] imu_data = characteristic.getValue();
+                if (imuupdate != null && imu_data != null){
+                    byte[] gXbytes = new byte[]{imu_data[0], imu_data[1], imu_data[2], imu_data[3]};
+                    byte[] gYbytes = new byte[]{imu_data[4], imu_data[5], imu_data[6], imu_data[7]};
+                    byte[] gZbytes = new byte[]{imu_data[8], imu_data[9], imu_data[10], imu_data[11]};
+                    float gX = ByteBuffer.wrap(gXbytes).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+                    float gY = ByteBuffer.wrap(gYbytes).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+                    float gZ = ByteBuffer.wrap(gZbytes).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+                    //Log.d("Gyroscope", gX + ", " + gY + ", " + gZ);
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            imuupdate.IMUGyroUpdate(gX, gY, gZ);
+                        }
+                    });
+                }
+            }
         }
 
         @Override
@@ -249,26 +302,10 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
     @Override
     public void connectToDevice(BluetoothDevice device) {
         deviceName = device.getName();
-        device.connectGatt(this, false, bluetoothGattCallback);
-        /*
-        bluetoothClientManager = new BluetoothClientManager(device, getApplicationContext());
-        bluetoothClientManager.start();
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        ad5932Fragment = new AD5932Fragment();
-        transaction.replace(R.id.deviceViewer, ad5932Fragment);
-        transaction.commit();
-        ad5932Fragment.setBluetoothClient(bluetoothClientManager);
-        */
-        Log.d("Bluetooth", "Connect to device");
-        /*
-        Log.d(getResources().getString(R.string.bluetooth_debug), "Connecting to BluetoothDevice");
-        bluetoothAdapter.cancelDiscovery();
         this.device = device;
-        waitForDiscoveryStop = true;
-        if (!discovering){
-            discoveryFinished();
-        }
-        */
+        stopScanning();
+        device.connectGatt(this, false, bluetoothGattCallback);
+        Log.d("Bluetooth", "Connect to device");
     }
 
     @Override
@@ -282,6 +319,7 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
         } else {
             ad5932Fragment.setAD5932ConfigChanged(this);
             ad5932Fragment.setDeviceText(deviceName);
+            this.imuupdate = ad5932Fragment;
         }
     }
 
@@ -295,7 +333,6 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
         new Handler(Looper.myLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
-                //bluetoothAdapter.startDiscovery();
                 scanLeDevice();
             }
         }, delay);
@@ -322,10 +359,7 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    scanning = false;
-                    bluetoothLeScanner.stopScan(leScanCallback);
-                    Log.d("Bluetooth", "Stopped Scan");
-                    scanDeviceFragment.discoveryFinished();
+                    stopScanning();
                 }
             }, SCAN_PERIOD);
             scanning = true;
@@ -333,11 +367,15 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
             Log.d("Bluetooth", "Started Scan");
             scanDeviceFragment.discoveryStarted();
         } else {
-            scanning = false;
-            bluetoothLeScanner.stopScan(leScanCallback);
-            Log.d("Bluetooth", "Stopped Scan");
-            scanDeviceFragment.discoveryFinished();
+            stopScanning();
         }
+    }
+
+    private void stopScanning(){
+        scanning = false;
+        bluetoothLeScanner.stopScan(leScanCallback);
+        Log.d("Bluetooth", "Stopped Scan");
+        scanDeviceFragment.discoveryFinished();
     }
 
     @Override
@@ -361,10 +399,42 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
     }
 
     private void switchToScanFragment(){
+        if (ad5932Gatt != null){
+            ad5932Gatt.disconnect();
+        }
+        BluetoothDeviceContent.resetContent();
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         scanDeviceFragment = new ScanDeviceFragment(this);
         transaction.replace(R.id.deviceViewer, scanDeviceFragment);
         transaction.commit();
+        Log.d("Should switch", "Lol");
+        scanDevice(200);
+    }
+
+    private void subscribeToBluetoothGATTCharacteristic(UUID service_uuid){
+        BluetoothGattService imuService = ad5932Gatt.getService(service_uuid);
+        if (imuService != null) {
+            BluetoothGattCharacteristic imuCharacteristic = imuService.getCharacteristic(service_uuid);
+            if (imuCharacteristic!= null) {
+                BluetoothGattDescriptor imuDescriptor = imuCharacteristic.getDescriptor(ApplicationUUIDS.UUID_WOOODO_BLUETOOTHLE_SUBSCRIPTION_THING);
+                if (imuDescriptor != null) {
+                    Log.d("Setted up notification?", "?" + ad5932Gatt.setCharacteristicNotification(imuCharacteristic, true));
+                    Log.d("SetValue", "?" + imuDescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE));
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    Log.d("Wrote Descriptor", "?" + ad5932Gatt.writeDescriptor(imuDescriptor));
+                }else {
+                    Log.e("BluetoothNotification", "Cannot allocate Descriptor");
+                }
+            }else {
+                Log.e("BluetoothNotification", "Cannot allocate BluetoothNotification Characteristic");
+            }
+        }else {
+            Log.e("BluetoothNotification", "Cannot allocate Service");
+        }
     }
 
     public void readAD5932Config(){
@@ -373,9 +443,22 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
             public void run() {
                 if(ad5932Gatt != null && ad5932configService != null){
                     ad5932Gatt.readCharacteristic(ad5932configService.getCharacteristic(ApplicationUUIDS.UUID_CONFIGURATION));
+                    try {
+                        Thread.sleep(300);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    ad5932Gatt.readCharacteristic(ad5932Gatt.getService(ApplicationUUIDS.UUID_IMU_ACCEL).getCharacteristic(ApplicationUUIDS.UUID_IMU_ACCEL));
+                    try {
+                        Thread.sleep(700);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    subscribeToBluetoothGATTCharacteristic(ApplicationUUIDS.UUID_IMU_ACCEL);
+                    subscribeToBluetoothGATTCharacteristic(ApplicationUUIDS.UUID_IMU_GYRO);
                 }
             }
-        }, 500);
+        }, 200);
     }
 
     @Override
