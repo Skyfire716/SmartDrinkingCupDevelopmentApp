@@ -67,6 +67,8 @@ public class AD5932SettingsFragment extends Fragment implements View.OnClickList
                 try {
                     value = Integer.parseInt(editable.toString());
                 } catch (NumberFormatException e) {
+                    new AlertDialog.Builder(getActivity()).setTitle("Invalid Input").setMessage("Your Input \"" + editable.toString() + "\" could not be parsed as a number")
+                            .setPositiveButton(android.R.string.ok, null).setIcon(android.R.drawable.ic_dialog_alert).show();
                     e.printStackTrace();
                 }
                 if (value < 2 || value > 4095) {
