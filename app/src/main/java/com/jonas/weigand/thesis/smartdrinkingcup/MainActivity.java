@@ -16,25 +16,30 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.ParcelUuid;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity implements IDeviceHandler, IDeviceDiscovered, IAD5932ConfigChanged {
+public class MainActivity extends AppCompatActivity implements IDeviceHandler, IDeviceDiscovered, IAD5932ConfigChanged, IUltrasonicConfigChanged {
 
     protected AD5932Fragment ad5932Fragment;
-
+    protected UltrasonicFragment ultrasonicFragment;
     protected ScanDeviceFragment scanDeviceFragment;
+    protected DiscoverServicesFragment discoverServicesFragment;
     protected BluetoothAdapter bluetoothAdapter;
 
     protected String deviceName;
@@ -43,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
     protected BluetoothGattService ad5932configService;
 
     protected IIMUUpdate imuupdate;
+    protected IDiscoverEvent discoverEventListener;
 
     private ScanCallback leScanCallback = new ScanCallback() {
         @Override
@@ -69,7 +75,12 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
             super.onConnectionStateChange(gatt, status, newState);
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 Log.d("Bluetooth", "Connected");
-                gatt.discoverServices();
+                communicate(CommunicationEnum.DEVICENAME, "Connecting to: " + gatt.getDevice().getName() + " " + gatt.getDevice().getAddress());
+                if(gatt.discoverServices()){
+                    communicate(CommunicationEnum.SCANSTARTED, "");
+                }else{
+                    communicate(CommunicationEnum.SCANSTARTED, "failed");
+                }
                 connectedToDevice();
                 // successfully connected to the GATT Server
                 //connectionState = STATE_CONNECTED;
@@ -99,18 +110,31 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
             printGattStatus(status);
             Log.d("Characteristic", "Read");
             Log.d("Values", "" + characteristic.getValue());
-            if (characteristic.getValue() != null && characteristic.getUuid().equals(ApplicationUUIDS.UUID_CONFIGURATION)) {
-                for (int i = 0; i < characteristic.getValue().length; i+=2) {
-                    short a = (short) (((((short)characteristic.getValue()[i+1]) << 8) & 0xFF00) | (((short)characteristic.getValue()[i]) & 0xFF));
-                    Log.d("Byte", "" + Integer.toBinaryString((a & 0xFFFF)));
+            if (characteristic.getValue() != null) {
+                if (characteristic.getUuid().equals(ApplicationUUIDS.UUID_CONFIGURATION)) {
+                    for (int i = 0; i < characteristic.getValue().length; i += 2) {
+                        short a = (short) (((((short) characteristic.getValue()[i + 1]) << 8) & 0xFF00) | (((short) characteristic.getValue()[i]) & 0xFF));
+                        Log.d("Byte", "" + Integer.toBinaryString((a & 0xFFFF)));
+                    }
+                    AD5932Config ad5932Config = new AD5932Config();
+                    Log.d("Can Load From Data?", "" + ad5932Config.loadConfigFromTransfer(characteristic.getValue()));
+                    Log.d("AD5932Config", ad5932Config.toString());
+                    ad5932Fragment.setConfig(ad5932Config);
+                } else if (characteristic.getUuid().equals(ApplicationUUIDS.UUID_IMU_ACCEL)) {
+                    Log.d("LOLOLOL", "" + characteristic.getValue());
+                    Log.d("LOLOLOL", "" + characteristic.getValue().length);
+                } else if (characteristic.getUuid().equals(ApplicationUUIDS.UUID_MEASURING_TYPE)) {
+                    if (discoverEventListener != null){
+                        String deviceCapability = new String(characteristic.getValue(), StandardCharsets.US_ASCII);
+                        communicate(CommunicationEnum.SMARTDRINKINGCUPDISCOVERED, deviceCapability);
+                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                switchToSmartCupFragment(deviceCapability);
+                            }
+                        }, 750);
+                    }
                 }
-                AD5932Config ad5932Config = new AD5932Config();
-                Log.d("Can Load From Data?", "" + ad5932Config.loadConfigFromTransfer(characteristic.getValue()));
-                Log.d("AD5932Config", ad5932Config.toString());
-                ad5932Fragment.setConfig(ad5932Config);
-            }else if(characteristic.getValue() != null && characteristic.getUuid().equals(ApplicationUUIDS.UUID_IMU_ACCEL)){
-                Log.d("LOLOLOL", "" + characteristic.getValue());
-                Log.d("LOLOLOL", "" + characteristic.getValue().length);
             }
         }
 
@@ -175,12 +199,21 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
             super.onServicesDiscovered(gatt, status);
             printGattStatus(status);
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                //broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
                 ArrayList<BluetoothGattService> services = new ArrayList<>(gatt.getServices());
                 if (services.isEmpty()) {
                     Log.d("Bluetooth", "Discovered empty service");
                 }
+                ad5932Gatt = gatt;
                 for (BluetoothGattService service : services) {
+                    communicate(CommunicationEnum.SERVICESDETECTED, service.getUuid().toString());
+                    if (service.getUuid().equals(ApplicationUUIDS.UUID_MEASURING_TYPE)){
+                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                gatt.readCharacteristic(service.getCharacteristic(ApplicationUUIDS.UUID_MEASURING_TYPE));
+                            }
+                        }, 500);
+                    }
                     Log.d("Bluetooth", "Found Service " + service.getUuid());
                     if (service.getUuid().equals(ApplicationUUIDS.UUID_CONFIGURATION)) {
                         ad5932Gatt = gatt;
@@ -265,7 +298,7 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
         bluetoothLeScanner.flushPendingScanResults(leScanCallback);
         Log.d("Bluetooth", "BluetoothLEScanner " + bluetoothLeScanner);
         handler = new Handler();
-        scanDevice(750);
+        scanDevice(750, false);
     }
 
     @Override
@@ -311,6 +344,12 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
     @Override
     public void connectedToDevice() {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        discoverServicesFragment = new DiscoverServicesFragment();
+        discoverEventListener = discoverServicesFragment;
+        transaction.replace(R.id.deviceViewer, discoverServicesFragment);
+        transaction.commit();
+        /*
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         ad5932Fragment = new AD5932Fragment();
         transaction.replace(R.id.deviceViewer, ad5932Fragment);
         transaction.commit();
@@ -321,19 +360,24 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
             ad5932Fragment.setDeviceText(deviceName);
             this.imuupdate = ad5932Fragment;
         }
+        */
     }
 
     @Override
     public void disconnectedToDevice() {
-
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        scanDeviceFragment = new ScanDeviceFragment(this);
+        transaction.replace(R.id.deviceViewer, scanDeviceFragment);
+        transaction.commit();
     }
 
     @Override
-    public void scanDevice(int delay) {
+    public void scanDevice(int delay, boolean filter) {
+        BluetoothDeviceContent.resetContent();
         new Handler(Looper.myLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
-                scanLeDevice();
+                scanLeDevice(filter);
             }
         }, delay);
     }
@@ -354,7 +398,7 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
 
     }
 
-    private void scanLeDevice() {
+    private void scanLeDevice(boolean filter) {
         if (!scanning) {
             handler.postDelayed(new Runnable() {
                 @Override
@@ -363,7 +407,20 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
                 }
             }, SCAN_PERIOD);
             scanning = true;
-            bluetoothLeScanner.startScan(leScanCallback);
+            if (filter) {
+                ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build();
+                ArrayList<ScanFilter> filters = new ArrayList<>();
+                ScanFilter filter1 = new ScanFilter.Builder().setDeviceName("AD5932 Device").build();
+                ScanFilter filter2 = new ScanFilter.Builder().setDeviceAddress("84:CC:A8:30:1E:62").build();
+                ScanFilter uuidFilter = new ScanFilter.Builder().setServiceUuid(new ParcelUuid(ApplicationUUIDS.UUID_MEASURING_TYPE), new ParcelUuid(ApplicationUUIDS.UUID_DEFAULT_MASK)).build();
+                filters.add(uuidFilter);
+                //filters.add(filter);
+                //filters.add(filter2);
+                //84:CC:A8:30:1E:62
+                bluetoothLeScanner.startScan(filters, settings, leScanCallback);
+            }else {
+                bluetoothLeScanner.startScan(leScanCallback);
+            }
             Log.d("Bluetooth", "Started Scan");
             scanDeviceFragment.discoveryStarted();
         } else {
@@ -408,7 +465,7 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
         transaction.replace(R.id.deviceViewer, scanDeviceFragment);
         transaction.commit();
         Log.d("Should switch", "Lol");
-        scanDevice(200);
+        scanDevice(200, false);
     }
 
     private void subscribeToBluetoothGATTCharacteristic(UUID service_uuid){
@@ -455,10 +512,26 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
                         e.printStackTrace();
                     }
                     subscribeToBluetoothGATTCharacteristic(ApplicationUUIDS.UUID_IMU_ACCEL);
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     subscribeToBluetoothGATTCharacteristic(ApplicationUUIDS.UUID_IMU_GYRO);
                 }
             }
         }, 200);
+    }
+
+    private void communicate(CommunicationEnum type, String text){
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (discoverEventListener != null){
+                    discoverEventListener.communicationUpdate(type, text);
+                }
+            }
+        }, 500);
     }
 
     @Override
@@ -469,5 +542,69 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
                 switchToScanFragment();
             }
         }, 200);
+    }
+
+    @Override
+    public void trigger() {
+        if (ad5932Gatt != null){
+            Log.d("Bluetooth", "Trigger");
+            BluetoothGattCharacteristic triggerCharacteristic = ad5932Gatt.getService(ApplicationUUIDS.UUID_TRIGGER).getCharacteristic(ApplicationUUIDS.UUID_TRIGGER);
+            triggerCharacteristic.setValue(new byte[]{0x01});
+            ad5932Gatt.writeCharacteristic(triggerCharacteristic);
+        }
+    }
+
+    private void switchToSmartCupFragment(String deviceCapability){
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        if (deviceCapability.contains(DiscoverServicesFragment.CAPACITIVEDEVICE)){
+            ad5932Fragment = new AD5932Fragment();
+            transaction.replace(R.id.deviceViewer, ad5932Fragment);
+            transaction.commit();
+            if (ad5932Fragment == null) {
+                Log.d("ADFragment", "Is null");
+            } else {
+                ad5932Fragment.setAD5932ConfigChanged(this);
+                ad5932Fragment.setDeviceText(deviceName);
+                this.imuupdate = ad5932Fragment;
+            }
+        }else if (deviceCapability.contains(DiscoverServicesFragment.LASERDEVICE)){
+
+        }else if(deviceCapability.contains(DiscoverServicesFragment.ULTRASONICDEVICE)){
+            ultrasonicFragment = new UltrasonicFragment();
+            transaction.replace(R.id.deviceViewer, ultrasonicFragment);
+            transaction.commit();
+            if (ultrasonicFragment == null) {
+                Log.d("ADFragment", "Is null");
+            } else {
+                ultrasonicFragment.setDeviceHandler(this);
+                ultrasonicFragment.setIUltrasonicConfigChanged(this);
+            }
+        }
+    }
+
+    @Override
+    public void reset() {
+        if (ad5932Gatt != null){
+            Log.d("Bluetooth", "Reset");
+            BluetoothGattCharacteristic triggerCharacteristic = ad5932Gatt.getService(ApplicationUUIDS.UUID_TRIGGER).getCharacteristic(ApplicationUUIDS.UUID_TRIGGER);
+            triggerCharacteristic.setValue(new byte[]{0x02});
+            ad5932Gatt.writeCharacteristic(triggerCharacteristic);
+        }
+    }
+
+    @Override
+    public void ultrasonicConfigChanged(byte[] data) {
+        if (ad5932Gatt != null) {
+            Log.d("Bluetooth", "Update Ultrasonic");
+            Log.d("UltrasonicData", "" + Integer.toBinaryString(data[0]));
+            Log.d("UltrasonicData", "" + Integer.toBinaryString(data[1]));
+            Log.d("UltrasonicData", "" + Integer.toBinaryString(data[2]));
+            Log.d("UltrasonicData", "" + Integer.toBinaryString(data[3]));
+            BluetoothGattCharacteristic ultrasonicCharacteristic = ad5932Gatt.getService(ApplicationUUIDS.UUID_HCSR04_CONTROL).getCharacteristic(ApplicationUUIDS.UUID_HCSR04_CONTROL);
+            ultrasonicCharacteristic.setValue(data);
+            ad5932Gatt.writeCharacteristic(ultrasonicCharacteristic);
+        }else{
+            Log.d("Bluetooth", "Gatt is null");
+        }
     }
 }

@@ -15,7 +15,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ProgressBar;
+import android.widget.RadioGroup;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import org.w3c.dom.Text;
@@ -25,13 +28,15 @@ import org.w3c.dom.Text;
  * Use the {@link ScanDeviceFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class ScanDeviceFragment extends Fragment implements View.OnClickListener, IDeviceDiscovered{
+public class ScanDeviceFragment extends Fragment implements View.OnClickListener, IDeviceDiscovered, CompoundButton.OnCheckedChangeListener {
 
     protected Button refreshDevicesBtn;
+    protected Switch filterScanBtn;
     protected BluetoothDevicesFragment devicesViewer;
     protected TextView scanStatusText;
     protected ProgressBar scanProgressSpinner;
     protected IDeviceHandler deviceHandler;
+    private boolean scanFiltered = false;
 
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -102,12 +107,14 @@ public class ScanDeviceFragment extends Fragment implements View.OnClickListener
         scanProgressSpinner = (ProgressBar) getView().findViewById(R.id.scanProgress);
         refreshDevicesBtn = (Button) getView().findViewById(R.id.refreshButton);
         refreshDevicesBtn.setOnClickListener(this);
+        filterScanBtn = (Switch) getView().findViewById(R.id.filterSwitch);
+        filterScanBtn.setOnCheckedChangeListener(this);
     }
 
     @Override
     public void onClick(View v) {
         if(v == refreshDevicesBtn){
-            deviceHandler.scanDevice(10);
+            deviceHandler.scanDevice(10, scanFiltered);
         }
     }
 
@@ -136,4 +143,10 @@ public class ScanDeviceFragment extends Fragment implements View.OnClickListener
         }
     }
 
+    @Override
+    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+        if (compoundButton == filterScanBtn){
+            scanFiltered = b;
+        }
+    }
 }

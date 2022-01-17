@@ -33,9 +33,13 @@
     <string name="ad5932_inc_mode">Internal/External Increment</string>
     <string name="ad5932_msbout">MSBOUT</string>
     <string name="ad5932_multiplier">Multiplier</string>
+    <string name="trigger">Trigger</string>
+    <string name="reset">Reset</string>
+    <string name="filter_scan">Filter Scan</string>
     <string name="ultrasonic_interval">Measurment Interval</string>
     <string name="servo_angle_settings">Servo Angle Configuration</string>
     <string name="servo_toggle">Toggle Servo</string>
+    <string name="uuid">UUID:</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="large_text">

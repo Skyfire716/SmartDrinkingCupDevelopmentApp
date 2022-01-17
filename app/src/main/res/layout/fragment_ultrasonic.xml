@@ -34,36 +34,67 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent">
 
-                    <TextView
-                        android:id="@+id/textView8"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/ultrasonic_interval"
-                        android:textColor="#000000"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintBottom_toBottomOf="@id/updateIntervalBar"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <SeekBar
-                        android:id="@+id/updateIntervalBar"
-                        android:layout_width="wrap_content"
-                        android:layout_height="48dp"
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/intervalLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/textView8"
-                        app:layout_constraintTop_toTopOf="parent" />
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
+
+                        <TextView
+                            android:id="@+id/textView8"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/ultrasonic_interval"
+                            android:textColor="#000000"
+                            android:textSize="24sp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:orientation="vertical"
+                            app:layout_constraintEnd_toStartOf="@id/intervalText"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/textView8">
+
+                            <SeekBar
+                                android:id="@+id/updateIntervalBar"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginEnd="16dp"
+                                android:padding="0dp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/intervalText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="48dp"
+                            android:text="TextView"
+                            android:textSize="24sp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/textView8" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
 
                     <TextView
                         android:id="@+id/textView9"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/servo_angle_settings"
+                        android:textSize="24sp"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/updateIntervalBar" />
+                        app:layout_constraintTop_toBottomOf="@id/intervalLayout" />
 
                     <EditText
                         android:id="@+id/minServoValEditText"
-                        android:layout_width="wrap_content"
+                        android:layout_width="80dp"
                         android:layout_height="48dp"
                         android:ems="10"
                         android:inputType="number|numberDecimal"
@@ -72,22 +103,27 @@
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toBottomOf="@id/textView9" />
 
-                    <SeekBar
-                        android:id="@+id/servoPosSeekBar"
-                        android:layout_width="wrap_content"
-                        android:layout_height="48dp"
-                        app:layout_constraintBottom_toBottomOf="@id/maxServoValEditText"
-                        app:layout_constraintEnd_toStartOf="@+id/maxServoValEditText"
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:layout_constraintEnd_toStartOf="@id/maxServoValEditText"
                         app:layout_constraintStart_toEndOf="@id/minServoValEditText"
-                        app:layout_constraintTop_toBottomOf="@id/textView9" />
+                        app:layout_constraintTop_toBottomOf="@id/textView9">
+
+                        <SeekBar
+                            android:id="@+id/servoPosSeekBar"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp" />
+                    </LinearLayout>
 
                     <EditText
                         android:id="@+id/maxServoValEditText"
-                        android:layout_width="wrap_content"
+                        android:layout_width="80dp"
                         android:layout_height="48dp"
-                        android:maxWidth="40dp"
                         android:ems="10"
                         android:inputType="number|numberDecimal"
+                        android:maxWidth="40dp"
                         android:numeric="integer"
                         android:text="180"
                         app:layout_constraintEnd_toEndOf="parent"
@@ -97,10 +133,10 @@
                         android:id="@+id/toggleServoBtn"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:layout_constraintStart_toEndOf="@id/servoStateText"
+                        android:text="@string/servo_toggle"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/maxServoValEditText"
-                        android:text="@string/servo_toggle" />
+                        app:layout_constraintStart_toEndOf="@id/servoStateText"
+                        app:layout_constraintTop_toBottomOf="@id/maxServoValEditText" />
 
                     <TextView
                         android:id="@+id/servoStateText"

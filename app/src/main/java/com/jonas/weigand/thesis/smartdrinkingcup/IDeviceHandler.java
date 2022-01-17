@@ -7,5 +7,5 @@ public interface IDeviceHandler {
     void connectToDevice(BluetoothDevice device);
     void connectedToDevice();
     void disconnectedToDevice();
-    void scanDevice(int delay);
+    void scanDevice(int delay, boolean filter);
 }

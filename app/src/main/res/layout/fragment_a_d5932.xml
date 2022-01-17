@@ -167,7 +167,7 @@
                     <androidx.fragment.app.FragmentContainerView
                         android:id="@+id/cupRendererContainer"
                         android:name="com.jonas.weigand.thesis.smartdrinkingcup.CupFragment"
-                        android:layout_width="250dp"
+                        android:layout_width="match_parent"
                         android:layout_height="250dp"
                         android:layout_marginTop="16dp"
                         android:layout_marginBottom="24dp"
@@ -179,13 +179,31 @@
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <view
-                    android:id="@+id/view"
+                    android:id="@+id/graphview"
                     class="com.jonas.weigand.thesis.smartdrinkingcup.GraphView"
                     android:layout_width="match_parent"
                     android:layout_height="100dp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/imu_layout" />
+
+                <Button
+                    android:id="@+id/triggerBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/trigger"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/graphview" />
+
+                <Button
+                    android:id="@+id/resetBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/reset"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/triggerBtn" />
             </androidx.constraintlayout.widget.ConstraintLayout>
         </LinearLayout>
     </ScrollView>

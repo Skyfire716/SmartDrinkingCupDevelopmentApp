@@ -42,6 +42,8 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener, II
 
     protected Button backBtn;
     protected Button collapseSettings;
+    protected Button triggerBtn;
+    protected Button resetBtn;
     protected AD5932SettingsFragment ad5932SettingsFragment;
     protected FragmentContainerView fragmentContainerView;
     protected FragmentContainerView cupRendererContainer;
@@ -106,6 +108,10 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener, II
         deviceNameTextView = (TextView) getView().findViewById(R.id.deviceNameTextView);
         deviceNameTextView.setText(deviceName);
         collapseSettings.setOnClickListener(this);
+        triggerBtn = (Button) getView().findViewById(R.id.triggerBtn);
+        triggerBtn.setOnClickListener(this);
+        resetBtn = (Button) getView().findViewById(R.id.resetBtn);
+        resetBtn.setOnClickListener(this);
         ax = (TextView) getView().findViewById(R.id.ax);
         ay = (TextView) getView().findViewById(R.id.ay);
         az = (TextView) getView().findViewById(R.id.az);
@@ -139,11 +145,17 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener, II
             }
             settings_visible = !settings_visible;
         }
+        if (v == triggerBtn){
+            IAD5932ConfigChanged.trigger();
+        }
+        if (v == resetBtn){
+            IAD5932ConfigChanged.reset();
+        }
     }
 
     //https://stackoverflow.com/a/13381228
 
-    private void expand(final View v) {
+    public static void expand(final View v) {
         int matchParentMeasureSpec = View.MeasureSpec.makeMeasureSpec(((View) v.getParent()).getWidth(), View.MeasureSpec.EXACTLY);
         int wrapContentMeasureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
         v.measure(matchParentMeasureSpec, wrapContentMeasureSpec);
@@ -173,7 +185,7 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener, II
         v.startAnimation(a);
     }
 
-    private void collapseView(final View v){
+    public static void collapseView(final View v){
         final int initialHeight = v.getMeasuredHeight();
         Animation a = new Animation()
         {
