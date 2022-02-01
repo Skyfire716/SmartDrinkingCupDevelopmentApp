@@ -21,26 +21,30 @@ import com.google.android.material.internal.TextWatcherAdapter;
 
 import org.w3c.dom.Text;
 
+import java.util.Collections;
+
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link UltrasonicFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class UltrasonicFragment extends Fragment implements View.OnClickListener, SeekBar.OnSeekBarChangeListener {
+public class UltrasonicFragment extends Fragment implements View.OnClickListener, SeekBar.OnSeekBarChangeListener, IUltrasonicDataUpdate {
 
     private Button toggleServoBtn;
     private TextView servoStateView;
     private TextView intervalText;
+    private TextView distanceText;
     private EditText minServoAngle;
     private EditText maxServoAngle;
     private SeekBar updateInterval;
     private SeekBar currentServoAngle;
 
+    private IUltrasonicDataUpdate iUltrasonicDataUpdate;
     private IUltrasonicConfigChanged iUltrasonicConfigChanged;
     private IDeviceHandler deviceHandler;
     private int minServoAngleInt;
     private int maxServoAngleInt;
-    private byte data[] = new byte[4];
+    private byte data[] = {0x00, 0x14, 0x00, (byte)0xB4};
 
     private TextWatcher minTextWatcher = new TextWatcher() {
         @Override
@@ -175,6 +179,7 @@ public class UltrasonicFragment extends Fragment implements View.OnClickListener
         toggleServoBtn = (Button) view.findViewById(R.id.toggleServoBtn);
         toggleServoBtn.setOnClickListener(this);
         servoStateView = (TextView) view.findViewById(R.id.servoStateText);
+        distanceText = (TextView) view.findViewById(R.id.distanceText);
         intervalText = (TextView) view.findViewById(R.id.intervalText);
         intervalText.setText("20ms");
         minServoAngle = (EditText) view.findViewById(R.id.minServoValEditText);
@@ -207,7 +212,7 @@ public class UltrasonicFragment extends Fragment implements View.OnClickListener
             //Max transferable Bytes 7 leading to max transferable Time
             int interval = 20 + (int) (Math.pow(2, 7) * (progress / 100.0));
             intervalText.setText(interval + "ms");
-            data[2] = (byte) (interval & 0x7F);
+            data[1] = (byte) (interval & 0x7F);
             if (iUltrasonicConfigChanged != null) {
                 iUltrasonicConfigChanged.ultrasonicConfigChanged(data);
             }
@@ -237,5 +242,17 @@ public class UltrasonicFragment extends Fragment implements View.OnClickListener
 
     public void setIUltrasonicConfigChanged(IUltrasonicConfigChanged iUltrasonicConfigChanged) {
         this.iUltrasonicConfigChanged = iUltrasonicConfigChanged;
+    }
+
+    @Override
+    public void distanceUpdate(float distance) {
+        if (distanceText!= null){
+            float minMlDistance = 15.9f;
+            float maxMlDistance = 5.1f;
+            float maxMl = 309;
+            distance = (float) (Math.round(distance * 10.0) / 10.0);
+            distanceText.setText(distance + "cm\n" +
+                    (distance - minMlDistance) * (maxMl) / (maxMlDistance - minMlDistance) + "ml");
+        }
     }
 }

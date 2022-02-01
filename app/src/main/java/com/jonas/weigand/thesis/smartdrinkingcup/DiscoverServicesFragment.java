@@ -38,6 +38,7 @@ public class DiscoverServicesFragment extends Fragment implements  IDiscoverEven
     public static final String ULTRASONICDEVICE = "Ultrasonic Cup";
     public static final String NOSMARTDEVICE = "This is not a SmartDrinking Cup";
 
+    private boolean inizialized = false;
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
@@ -119,10 +120,14 @@ public class DiscoverServicesFragment extends Fragment implements  IDiscoverEven
         uuidItemFragment = new UUIDItemFragment();
         transaction.replace(R.id.serviceUUIDContainer, uuidItemFragment);
         transaction.commit();
+        inizialized = true;
     }
 
     @Override
     public void communicationUpdate(CommunicationEnum type, String text) {
+        if (!inizialized){
+            return;
+        }
         switch (type) {
             case DEVICENAME:
                 connect.setTextColor(getResources().getColor(R.color.green));

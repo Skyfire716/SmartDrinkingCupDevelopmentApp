@@ -11,7 +11,9 @@ public class ApplicationUUIDS {
     public static final UUID UUID_IMU_ACCEL =UUID.fromString("cb68774e-5438-4c5a-8937-814be0a249bb");
     public static final UUID UUID_IMU_GYRO = UUID.fromString("cd98f4b7-df60-4d9c-9c87-6a64e19a7c4f");
     public static final UUID UUID_HCSR04_CONTROL = UUID.fromString("9988258d-5663-4e1f-a4bc-a8e211f98e39");
+    public static final UUID UUID_HCSR04_DISTANCE = UUID.fromString("6a2676fa-20e0-48a7-9cd6-560a48013bfe");
     public static final UUID UUID_WOOODO_BLUETOOTHLE_SUBSCRIPTION_THING = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+    public static final UUID UUID_AD5932_MEASURE_RESULT = UUID.fromString("cbd047db-ed1e-4523-bf97-f29f5b4f4c8d");
     public static final UUID UUID_DEFAULT_MASK = UUID.fromString("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF");
     public static final UUID UUID_WAVEFORM =UUID.fromString("cb68774e-5438-4c5a-8937-814be0a249bb");
     public static final UUID UUID_MULTIPLIER =UUID.fromString("cd98f4b7-df60-4d9c-9c87-6a64e19a7c4f");

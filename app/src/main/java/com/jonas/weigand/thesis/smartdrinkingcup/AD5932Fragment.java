@@ -9,6 +9,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.provider.ContactsContract;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,14 +19,20 @@ import android.view.animation.Transformation;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.LegendRenderer;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.LineGraphSeries;
+
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link AD5932Fragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class AD5932Fragment extends Fragment implements View.OnClickListener, IIMUUpdate {
+public class AD5932Fragment extends Fragment implements View.OnClickListener, IIMUUpdate, IAD5932DataUpdate {
 
     private String deviceName;
     protected TextView deviceNameTextView;
@@ -47,6 +55,10 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener, II
     protected AD5932SettingsFragment ad5932SettingsFragment;
     protected FragmentContainerView fragmentContainerView;
     protected FragmentContainerView cupRendererContainer;
+
+    protected GraphView frequencyCurve;
+    protected LineGraphSeries<DataPoint> frequencySeries;
+    protected ArrayList<DataPoint> dataForSeries = new ArrayList<>(200);
 
     private IAD5932ConfigChanged IAD5932ConfigChanged;
 
@@ -110,6 +122,31 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener, II
         collapseSettings.setOnClickListener(this);
         triggerBtn = (Button) getView().findViewById(R.id.triggerBtn);
         triggerBtn.setOnClickListener(this);
+
+        frequencyCurve = (GraphView) getView().findViewById(R.id.frequencyCurveGraph);
+        frequencyCurve.setTitle("Sweep Response");
+        // activate horizontal zooming and scrolling
+        frequencyCurve.getViewport().setScalable(true);
+        // activate horizontal scrolling
+        frequencyCurve.getViewport().setScrollable(true);
+        // activate horizontal and vertical zooming and scrolling
+        frequencyCurve.getViewport().setScalableY(true);
+        // activate vertical scrolling
+        frequencyCurve.getViewport().setScrollableY(true);
+        frequencyCurve.getViewport().setMaxX(3500000);
+        frequencyCurve.getViewport().setMinX(1000);
+
+        frequencyCurve.getGridLabelRenderer().setHorizontalAxisTitle("f in Hz");
+        frequencyCurve.getGridLabelRenderer().setVerticalAxisTitle("Amplitude");
+        if (frequencySeries == null){
+            frequencySeries = new LineGraphSeries<>();
+            frequencySeries.setTitle("Capacitive Characteristic");
+        }
+        frequencyCurve.addSeries(frequencySeries);
+        frequencyCurve.getLegendRenderer().setVisible(true);
+        frequencyCurve.getLegendRenderer().setAlign(LegendRenderer.LegendAlign.TOP);
+
+
         resetBtn = (Button) getView().findViewById(R.id.resetBtn);
         resetBtn.setOnClickListener(this);
         ax = (TextView) getView().findViewById(R.id.ax);
@@ -248,7 +285,27 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener, II
         }
     }
 
-    /*
+    @Override
+    public void dataUpdated(float frequency, float response) {
+        if (!dataForSeries.isEmpty() && frequency < dataForSeries.get(dataForSeries.size() - 1).getX()){
+            dataForSeries.clear();
+        }
+        dataForSeries.add(new DataPoint(frequency, response));
+        DataPoint[] dataPoints = new DataPoint[dataForSeries.size()];
+        dataPoints = dataForSeries.toArray(dataPoints);
+        frequencySeries.resetData(dataPoints);
+        /*
+        Log.d("AD5932", "Data Update freq " + frequency + " resp " + response);
+        DataPoint dataPoint = new DataPoint(frequency, response);
+        frequencySeries.appendData(dataPoint, false, 200, false);
+         */
+    }
+
+    @Override
+    public void EndOfScan() {
+        frequencySeries.resetData(null);
+    }
+/*
     @Override
     public void changeConfig(AD5932Config conf) {
         if (this.bluetoothClientManager != null && conf != null){
