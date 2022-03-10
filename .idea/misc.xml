@@ -7,11 +7,13 @@
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.22" />
         <entry key="app/src/main/res/layout/fragment_a_d5932.xml" value="0.18" />
         <entry key="app/src/main/res/layout/fragment_a_d5932_settings.xml" value="0.14" />
+        <entry key="app/src/main/res/layout/fragment_data_collector.xml" value="0.25" />
         <entry key="app/src/main/res/layout/fragment_discover_services.xml" value="0.15" />
         <entry key="app/src/main/res/layout/fragment_item.xml" value="0.18" />
         <entry key="app/src/main/res/layout/fragment_item2.xml" value="0.2" />
         <entry key="app/src/main/res/layout/fragment_item_list.xml" value="0.22" />
         <entry key="app/src/main/res/layout/fragment_item_list2.xml" value="0.14402173913043478" />
+        <entry key="app/src/main/res/layout/fragment_laser.xml" value="0.14719202898550723" />
         <entry key="app/src/main/res/layout/fragment_scan_device.xml" value="0.25" />
         <entry key="app/src/main/res/layout/fragment_ultrasonic.xml" value="0.25" />
         <entry key="app/src/main/res/layout/sample_cup_viewer.xml" value="0.1671195652173913" />

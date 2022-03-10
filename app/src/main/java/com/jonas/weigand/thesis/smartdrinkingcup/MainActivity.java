@@ -2,6 +2,7 @@ package com.jonas.weigand.thesis.smartdrinkingcup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -19,17 +20,26 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.util.Log;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.UUID;
@@ -37,6 +47,7 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity implements IDeviceHandler, IDeviceDiscovered, IAD5932ConfigChanged, IUltrasonicConfigChanged {
 
     protected AD5932Fragment ad5932Fragment;
+    protected LaserFragment laserFragment;
     protected UltrasonicFragment ultrasonicFragment;
     protected ScanDeviceFragment scanDeviceFragment;
     protected DiscoverServicesFragment discoverServicesFragment;
@@ -51,6 +62,14 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
     protected IUltrasonicDataUpdate iUltrasonicDataUpdate;
     protected IDiscoverEvent discoverEventListener;
     protected IAD5932DataUpdate iad5932DataUpdate;
+
+    protected  ILaserUpdate iLaserUpdate;
+
+    private File path;
+    private File collectReceivedDataTo;
+    private FileOutputStream fileOutputStream;
+    private BufferedWriter bufferedWriter;
+
 
     private ScanCallback leScanCallback = new ScanCallback() {
         @Override
@@ -124,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
                     ad5932Fragment.setConfig(ad5932Config);
                 } else if (characteristic.getUuid().equals(ApplicationUUIDS.UUID_MEASURING_TYPE)) {
                     if (discoverEventListener != null){
-                        String deviceCapability = new String(characteristic.getValue(), StandardCharsets.US_ASCII);
+                        String deviceCapability = new String(characteristic.getValue(), StandardCharsets.US_ASCII).replaceAll("[^A-Za-z0-9 ]", "");
                         communicate(CommunicationEnum.SMARTDRINKINGCUPDISCOVERED, deviceCapability);
                         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
                             @Override
@@ -173,7 +192,31 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
                                     }
                                 }, 500);
                             }
+                            if (DiscoverServicesFragment.LASERDEVICE.contains(deviceCapability)){
+                                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        subscribeToLaserDistance();
+                                        try {
+                                            Thread.sleep(200);
+                                        } catch (InterruptedException e) {
+                                            e.printStackTrace();
+                                        }
+                                        gatt.readCharacteristic(gatt.getService(ApplicationUUIDS.UUID_LASER_CONTROL).getCharacteristic(ApplicationUUIDS.UUID_LASER_CONTROL));
+                                    }
+                                }, 550);
+                            }
                         }
+                    }
+                }
+                if (characteristic.getUuid().equals(ApplicationUUIDS.UUID_LASER_CONTROL) && characteristic.getValue() != null                ){
+                    if (iLaserUpdate != null){
+                        new  Handler(Looper.getMainLooper()).post(new Runnable() {
+                            @Override
+                            public void run() {
+                                iLaserUpdate.gotInterval(characteristic.getValue()[0]);
+                            };
+                        });
                     }
                 }
             }
@@ -229,6 +272,15 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
                 byte[] distance_data = characteristic.getValue();
                 if (distance_data != null && iUltrasonicDataUpdate != null){
                     float distance = ByteBuffer.wrap(distance_data).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+                    if (bufferedWriter != null){
+                        try {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                bufferedWriter.write( Instant.now().toString() + "\t" + distance + "\tUltrasonic\n");
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                     new Handler(Looper.getMainLooper()).post(new Runnable() {
                         @Override
                         public void run() {
@@ -263,6 +315,29 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
                             }
                         });
                     }
+                }
+            }else if (characteristic.getUuid().equals(ApplicationUUIDS.UUID_LASER_DISTANCE)){
+                byte[] trans = characteristic.getValue();
+                if (trans != null && iLaserUpdate != null){
+                    byte[] distanceBytes = new byte[]{trans[0], trans[1], trans[2], trans[3]};
+                    byte[] voltageBytes = new byte[]{trans[4], trans[5], trans[6], trans[7]};
+                    float distance = ByteBuffer.wrap(distanceBytes).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+                    float voltage = ByteBuffer.wrap(voltageBytes).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+                    if (bufferedWriter != null){
+                        try {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                bufferedWriter.write( Instant.now().toString() + "\t" + distance + "\tLaser\n");
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            iLaserUpdate.updateDistance(distance, voltage);
+                        }
+                    });
                 }
             }
         }
@@ -604,6 +679,10 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
         subscribeToBluetoothGATTCharacteristic(ApplicationUUIDS.UUID_HCSR04_DISTANCE);
     }
 
+    private void subscribeToLaserDistance() {
+        subscribeToBluetoothGATTCharacteristic(ApplicationUUIDS.UUID_LASER_DISTANCE);
+    }
+
     private void subscribeToAD5932DataUpdate() {
         subscribeToBluetoothGATTCharacteristic(ApplicationUUIDS.UUID_AD5932_MEASURE_RESULT);
     }
@@ -662,6 +741,18 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
         }
     }
 
+    private void setMainActivityToDataCollectorUltraSonic(){
+        ultrasonicFragment.setMainActivity(this);
+    }
+
+    private void setMainActivityToDataCollectorLaser(){
+        laserFragment.setMainActivity(this);
+    }
+
+    private void setMainActivityToDataCollectorAD(){
+        ad5932Fragment.setMainActivity(this);
+    }
+
     private void switchToSmartCupFragment(String deviceCapability){
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         if (deviceCapability.contains(DiscoverServicesFragment.CAPACITIVEDEVICE)){
@@ -673,11 +764,30 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
             } else {
                 ad5932Fragment.setAD5932ConfigChanged(this);
                 ad5932Fragment.setDeviceText(deviceName);
+                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        setMainActivityToDataCollectorAD();
+                    }
+                }, 200);
                 this.imuupdate = ad5932Fragment;
                 this.iad5932DataUpdate = ad5932Fragment;
             }
         }else if (deviceCapability.contains(DiscoverServicesFragment.LASERDEVICE)){
-
+            laserFragment = new LaserFragment();
+            transaction.replace(R.id.deviceViewer, laserFragment);
+            transaction.commit();
+            if (laserFragment == null){
+                Log.d("LaserFragment", "Is null");
+            }else {
+                this.iLaserUpdate = laserFragment;
+                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        setMainActivityToDataCollectorLaser();
+                    }
+                }, 200);
+            }
         }else if(deviceCapability.contains(DiscoverServicesFragment.ULTRASONICDEVICE)){
             ultrasonicFragment = new UltrasonicFragment();
             transaction.replace(R.id.deviceViewer, ultrasonicFragment);
@@ -688,6 +798,12 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
                 ultrasonicFragment.setDeviceHandler(this);
                 iUltrasonicDataUpdate = ultrasonicFragment;
                 ultrasonicFragment.setIUltrasonicConfigChanged(this);
+                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        setMainActivityToDataCollectorUltraSonic();
+                    }
+                }, 200);
             }
         }
     }
@@ -715,6 +831,29 @@ public class MainActivity extends AppCompatActivity implements IDeviceHandler, I
             ad5932Gatt.writeCharacteristic(ultrasonicCharacteristic);
         }else{
             Log.d("Bluetooth", "Gatt is null");
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public void collectDataAbout(String glass, String beverage) {
+        try {
+            if (fileOutputStream != null) {
+                Log.d("Main", "Closing File");
+                bufferedWriter.flush();
+                bufferedWriter.close();
+                fileOutputStream.flush();
+                fileOutputStream.close();
+                fileOutputStream = null;
+                bufferedWriter = null;
+            } else {
+                Log.d("Main", "Opening File");
+                path = getApplicationContext().getFilesDir();
+                collectReceivedDataTo = new File(path, glass + "-" + beverage + Instant.now().toString() + ".txt");
+                fileOutputStream = new FileOutputStream(collectReceivedDataTo);
+                bufferedWriter = new BufferedWriter(new OutputStreamWriter(fileOutputStream));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

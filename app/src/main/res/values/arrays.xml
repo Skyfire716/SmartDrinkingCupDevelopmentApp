@@ -7,6 +7,21 @@
         <item>"x500"</item>
     </string-array>
 
+    <string-array name="glassArray">
+        <item>"Gelb"</item>
+        <item>"Tasse"</item>
+        <item>"Schwarz"</item>
+    </string-array>
+
+    <string-array name="beverageArray">
+        <item>"Wasser"</item>
+        <item>"WasserEis"</item>
+        <item>"Cola"</item>
+        <item>"OSaft"</item>
+        <item>"Milch"</item>
+    </string-array>
+
+
     <string-array name="frquencyPrefix">
         <item>"Hz"</item>
         <item>"kHz"</item>

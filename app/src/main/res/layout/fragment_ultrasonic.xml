@@ -157,6 +157,15 @@
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toBottomOf="@id/servoStateText" />
+
+                    <androidx.fragment.app.FragmentContainerView
+                        android:id="@+id/dataCollectorContainer"
+                        android:name="com.jonas.weigand.thesis.smartdrinkingcup.DataCollector"
+                        android:layout_width="wrap_content"
+                        android:layout_height="100dp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/distanceText" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
         </ScrollView>

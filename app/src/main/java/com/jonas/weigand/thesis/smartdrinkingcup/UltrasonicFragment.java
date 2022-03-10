@@ -6,7 +6,10 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentContainerView;
+import androidx.fragment.app.FragmentTransaction;
 
+import android.provider.ContactsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -38,6 +41,7 @@ public class UltrasonicFragment extends Fragment implements View.OnClickListener
     private EditText maxServoAngle;
     private SeekBar updateInterval;
     private SeekBar currentServoAngle;
+    private DataCollector dataCollector;
 
     private IUltrasonicDataUpdate iUltrasonicDataUpdate;
     private IUltrasonicConfigChanged iUltrasonicConfigChanged;
@@ -166,6 +170,12 @@ public class UltrasonicFragment extends Fragment implements View.OnClickListener
         }
     }
 
+    public void setMainActivity(MainActivity mainActivity){
+        if (dataCollector != null){
+            dataCollector.setMainActivity(mainActivity);
+        }
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -191,6 +201,10 @@ public class UltrasonicFragment extends Fragment implements View.OnClickListener
         currentServoAngle = (SeekBar) view.findViewById(R.id.servoPosSeekBar);
         currentServoAngle.setOnSeekBarChangeListener(this);
 
+        FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
+        dataCollector = new DataCollector();
+        transaction.replace(R.id.dataCollectorContainer, dataCollector);
+        transaction.commit();
     }
 
     @Override

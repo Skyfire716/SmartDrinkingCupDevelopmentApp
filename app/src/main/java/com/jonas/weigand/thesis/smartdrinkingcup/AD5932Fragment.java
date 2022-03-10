@@ -56,6 +56,8 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener, II
     protected FragmentContainerView fragmentContainerView;
     protected FragmentContainerView cupRendererContainer;
 
+    protected DataCollector dataCollector;
+
     protected GraphView frequencyCurve;
     protected LineGraphSeries<DataPoint> frequencySeries;
     protected ArrayList<DataPoint> dataForSeries = new ArrayList<>(200);
@@ -71,6 +73,11 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener, II
     private String mParam1;
     private String mParam2;
 
+    public void setMainActivity(MainActivity mainActivity){
+        if (dataCollector!=null){
+            dataCollector.setMainActivity(mainActivity);
+        }
+    }
     public AD5932Fragment() {
         // Required empty public constructor
     }
@@ -165,6 +172,10 @@ public class AD5932Fragment extends Fragment implements View.OnClickListener, II
         transaction1.addToBackStack(null);
         transaction1.commit();
         ad5932SettingsFragment.setIAD5932ConfigChanged(IAD5932ConfigChanged);
+        FragmentTransaction transaction2 = getChildFragmentManager().beginTransaction();
+        dataCollector = new DataCollector();
+        transaction2.replace(R.id.addataCollectorContainers, dataCollector);
+        transaction2.commit();
      }
 
     @Override
